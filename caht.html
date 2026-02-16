@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Fancy Chatbot</title>
+    <style>
+        :root{
+            --bg:#071028; --card:#071623; --muted:#9aa6b6; --accent:#06b6d4; --accent-2:#7c3aed;
+            --glass: rgba(255,255,255,0.04); --glass-2: rgba(255,255,255,0.02);
+            --user:#0ea5a6; --bot:#0f1724; --white:#e6eef6; --success:#10b981;
+            font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%;margin:0;background:
+            radial-gradient(600px 120px at 10% 10%, rgba(6,182,212,0.02), transparent 10%),
+            linear-gradient(180deg,#041029 0%,#071017 100%);
+            color:var(--white); -webkit-font-smoothing:antialiased;}
+        .wrap{max-width:1100px;margin:28px auto;height:86vh;background:linear-gradient(180deg,var(--card),#05111b);border-radius:14px;display:grid;grid-template-columns:280px 1fr;overflow:hidden;box-shadow:0 10px 50px rgba(2,6,23,.6);border:1px solid rgba(255,255,255,.03)}
+        /* Sidebar */
+        .sidebar{padding:18px;border-right:1px solid rgba(255,255,255,.03);display:flex;flex-direction:column;gap:14px;background:
+            linear-gradient(180deg, rgba(124,58,237,0.02), transparent)}
+        .brand{display:flex;align-items:center;gap:12px}
+        .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 6px 18px rgba(124,58,237,0.12)}
+        .brand h2{margin:0;font-size:16px}
+        .actions{display:flex;gap:8px;flex-wrap:wrap}
+        .btn{background:var(--glass);border:1px solid rgba(255,255,255,.03);padding:8px 10px;border-radius:10px;color:var(--white);cursor:pointer;font-weight:600;font-size:13px}
+        .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,.03)}
+        .search{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,0.02);padding:8px;border-radius:10px;color:var(--muted)}
+        .convos{overflow:auto;flex:1;padding-right:6px;display:flex;flex-direction:column;gap:8px}
+        .conv{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;cursor:pointer}
+        .conv:hover{background:rgba(255,255,255,0.02)}
+        .conv .thumb{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700}
+        .conv .meta{flex:1}
+        .small{font-size:12px;color:var(--muted)}
+        /* Chat area */
+        .chat{display:flex;flex-direction:column;height:100%}
+        .chat-header{padding:18px;border-bottom:1px solid rgba(255,255,255,.03);display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .chat-title{display:flex;gap:12px;align-items:center}
+        .chat-body{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:16px;background:
+            radial-gradient(700px 140px at 85% 10%, rgba(99,102,241,0.02), transparent 8%),
+            linear-gradient(180deg, rgba(255,255,255,0.005), transparent)}
+        .empty{margin:auto;color:var(--muted);text-align:center;max-width:520px}
+        .messages{display:flex;flex-direction:column;gap:12px}
+        .bubble{max-width:78%;padding:12px 14px;border-radius:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;font-size:14px}
+        .bubble.user{align-self:flex-end;background:linear-gradient(180deg,var(--user),#0891b2);color:#052224;border-bottom-right-radius:6px}
+        .bubble.bot{align-self:flex-start;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));color:var(--white);border-bottom-left-radius:6px}
+        .meta-line{font-size:12px;color:var(--muted);margin-bottom:6px}
+        pre{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:10px;border-radius:10px;overflow:auto;margin:8px 0}
+        code{background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace}
+        .typing{display:inline-flex;gap:6px;align-items:center}
+        .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.12);animation:bl 1s infinite}
+        .dot:nth-child(2){animation-delay:.12s}.dot:nth-child(3){animation-delay:.24s}
+        @keyframes bl{0%{opacity:.25}50%{opacity:1}100%{opacity:.25}}
+        /* Composer */
+        .composer{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(255,255,255,.03);align-items:flex-end;background:linear-gradient(180deg, rgba(2,6,23,.2), transparent)}
+        .input{flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:8px;display:flex;gap:8px;align-items:flex-end}
+        textarea{border:0;background:transparent;color:var(--white);outline:none;resize:none;width:100%;min-height:48px;max-height:160px;font-size:14px;padding:6px}
+        .right-actions{display:flex;flex-direction:column;gap:8px}
+        .icon-btn{width:44px;height:44px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;border:0;color:#042025;font-weight:700;cursor:pointer}
+        .small-muted{font-size:12px;color:var(--muted)}
+        /* responsive */
+        @media (max-width:880px){.wrap{grid-template-columns:1fr;height:94vh}.sidebar{display:none}}
+    </style>
+</head>
+<body>
+    <div class="wrap" role="application" aria-label="Fancy Chatbot">
+        <aside class="sidebar" aria-hidden="false">
+            <div class="brand">
+                <div class="logo" aria-hidden="true">CB</div>
+                <div>
+                    <h2>Fancy Chat</h2>
+                    <div class="small muted">AI playground</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="newConv" class="btn">+ New</button>
+                <button id="download" class="btn ghost" title="Download transcript">Export</button>
+                <button id="clear" class="btn ghost" title="Clear chat">Clear</button>
+            </div>
+
+            <div class="search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="opacity:.9"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <input id="convFilter" placeholder="Search conversations" style="flex:1;border:0;background:transparent;color:var(--white);outline:none;font-size:13px">
+            </div>
+
+            <div class="convos" id="convos" role="list"></div>
+            <div class="small muted">Tip: Press Enter to send, Shift+Enter for newline.</div>
+        </aside>
+
+        <section class="chat" aria-live="polite">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700">AI</div>
+                    <div>
+                        <div style="font-weight:700">Assistant</div>
+                        <div class="small muted" id="convMeta">No conversations yet</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <button id="themeToggle" class="btn ghost">Theme</button>
+                </div>
+            </div>
+
+            <main class="chat-body" id="chatBody">
+                <div class="empty" id="empty">Welcome — start a conversation by typing below.</div>
+                <div class="messages" id="messages" aria-live="polite"></div>
+            </main>
+
+            <form id="composer" class="composer" autocomplete="off">
+                <div class="input" role="group" aria-label="Message input">
+                    <textarea id="input" placeholder="Type a message..." rows="1"></textarea>
+                </div>
+                <div class="right-actions">
+                    <div style="display:flex;gap:8px">
+                        <button type="button" id="attach" class="btn ghost" title="Attach">📎</button>
+                        <button type="button" id="retry" class="btn ghost" title="Regenerate">↻</button>
+                    </div>
+                    <button type="submit" id="send" class="icon-btn" aria-label="Send">➤</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        // Minimal, self-contained "fancy" frontend. Replace getBotReply with actual API integration.
+        const convosEl = document.getElementById('convos');
+        const messagesEl = document.getElementById('messages');
+        const chatBody = document.getElementById('chatBody');
+        const empty = document.getElementById('empty');
+        const input = document.getElementById('input');
+        const form = document.getElementById('composer');
+        const convMeta = document.getElementById('convMeta');
+
+        let conversations = [];
+        let activeId = null;
+
+        function uid() { return Math.random().toString(36).slice(2,9); }
+
+        function createConversation(title = 'New conversation') {
+            const id = uid();
+            const conv = {id, title, messages: [], created: Date.now()};
+            conversations.unshift(conv);
+            activeId = id;
+            renderConvos();
+            renderActive();
+            return conv;
+        }
+
+        function renderConvos(filter = '') {
+            convosEl.innerHTML = '';
+            const list = conversations.filter(c => c.title.toLowerCase().includes(filter.toLowerCase()));
+            list.forEach(c => {
+                const el = document.createElement('div');
+                el.className = 'conv';
+                el.title = c.title;
+                el.dataset.id = c.id;
+                el.innerHTML = `<div class="thumb">${c.title[0]||'C'}</div>
+                                                <div class="meta"><div style="font-weight:600">${c.title}</div><div class="small-muted small">${new Date(c.created).toLocaleString()}</div></div>`;
+                el.addEventListener('click', () => { activeId = c.id; renderActive(); });
+                convosEl.appendChild(el);
+            });
+        }
+
+        function addMessage(role, text, meta) {
+            if(!activeId) createConversation();
+            const conv = conversations.find(c => c.id === activeId);
+            const msg = {id:uid(), role, text, time:Date.now(), meta};
+            conv.messages.push(msg);
+            renderActive();
+            return msg;
+        }
+
+        function renderActive() {
+            const conv = conversations.find(c => c.id === activeId);
+            messagesEl.innerHTML = '';
+            if(!conv || conv.messages.length === 0) {
+                empty.style.display = 'block';
+                convMeta.textContent = conv ? new Date(conv.created).toLocaleString() : 'No conversations yet';
+                return;
+            }
+            empty.style.display = 'none';
+            convMeta.textContent = `${conv.title} • ${conv.messages.length} messages`;
+            conv.messages.forEach(m => {
+                const el = renderMessageEl(m);
+                messagesEl.appendChild(el);
+            });
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function renderMessageEl(m) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'bubble ' + (m.role === 'user' ? 'user' : 'bot');
+            const meta = document.createElement('div');
+            meta.className = 'meta-line';
+            meta.textContent = `${m.role === 'user' ? 'You' : 'Assistant'} • ${new Date(m.time).toLocaleTimeString()}`;
+            wrapper.appendChild(meta);
+            const content = document.createElement('div');
+            content.innerHTML = markdownToHtml(escapeHtml(m.text));
+            wrapper.appendChild(content);
+            return wrapper;
+        }
+
+        function showTyping() {
+            const ty = document.createElement('div');
+            ty.className = 'bubble bot';
+            ty.id = 'typing';
+            ty.innerHTML = `<div class="meta-line">Assistant • ...</div><div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
+            messagesEl.appendChild(ty);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+        function removeTyping(){ const t=document.getElementById('typing'); if(t) t.remove(); }
+
+        // simple markdown subset: code blocks, inline code, bold/italic, lists
+        function markdownToHtml(md) {
+            // code blocks
+            md = md.replace(/```([\s\S]*?)```/g, (m, code) => `<pre><code>${escapeHtml(code)}</code></pre>`);
+            // inline code
+            md = md.replace(/`([^`]+)`/g, (m, c) => `<code>${c}</code>`);
+            // bold
+            md = md.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            // italics
+            md = md.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            // lists
+            md = md.replace(/(^|\n)-\s(.+)/g, '$1<li>$2</li>');
+            md = md.replace(/(<li>[\s\S]+<\/li>)/g, '<ul>$1</ul>');
+            // paragraphs
+            md = md.replace(/\n{2,}/g, '</p><p>');
+            return '<p>' + md + '</p>';
+        }
+        function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        // Simulated backend reply (replace with real API call)
+        async function getBotReply(prompt) {
+            const canned = [
+                "Nice question — here's a quick answer.",
+                "I can help with that. Could you provide more details?",
+                "Here's an example:\n\n1) Step one\n2) Step two\n3) Done",
+                "I don't have that info right now, but I can show how to find it."
+            ];
+            await new Promise(r => setTimeout(r, 600 + Math.random()*700));
+            if (/hello|hi/i.test(prompt)) return "Hello! How can I help you today?";
+            if (prompt.length < 40) return "Short prompt received: " + prompt;
+            return canned[Math.floor(Math.random()*canned.length)];
+        }
+
+        // Interaction
+        document.getElementById('newConv').addEventListener('click', () => {
+            const conv = createConversation('Conversation ' + (conversations.length+1));
+            renderConvos();
+            renderActive();
+        });
+        document.getElementById('clear').addEventListener('click', () => {
+            if(!confirm('Clear all conversations?')) return;
+            conversations = []; activeId = null;
+            renderConvos(); renderActive();
+        });
+        document.getElementById('download').addEventListener('click', () => {
+            const conv = conversations.find(c => c.id === activeId);
+            if(!conv){ alert('No conversation to export'); return; }
+            const blob = new Blob([conv.messages.map(m=>`${m.role.toUpperCase()}: ${m.text}`).join('\n\n')], {type:'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = (conv.title || 'chat') + '.txt'; a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if(!text) return;
+            addMessage('user', text);
+            input.value = '';
+            renderActive();
+            showTyping();
+            try {
+                const reply = await getBotReply(text);
+                removeTyping();
+                addMessage('bot', reply);
+                renderActive();
+            } catch (err) {
+                removeTyping();
+                addMessage('bot', 'Error: could not get reply.');
+                renderActive();
+            }
+        });
+
+        // Enter sends, Shift+Enter newline
+        input.addEventListener('keydown', e => {
+            if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); }
+        });
+
+        // small conveniences
+        document.getElementById('retry').addEventListener('click', async () => {
+            const conv = conversations.find(c => c.id === activeId);
+            if(!conv || conv.messages.length === 0) return;
+            // find last user message and re-generate
+            const lastUser = [...conv.messages].reverse().find(m => m.role === 'user');
+            if(!lastUser) return;
+            showTyping();
+            try {
+                const reply = await getBotReply(lastUser.text);
+                removeTyping();
+                addMessage('bot', reply);
+                renderActive();
+            } catch {
+                removeTyping();
+                addMessage('bot', 'Error: could not get reply.');
+                renderActive();
+            }
+        });
+
+        // conv filter
+        document.getElementById('convFilter').addEventListener('input', (e)=>renderConvos(e.target.value));
+
+        // lightweight auto-resize
+        const ta = input;
+        const resize = () => { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight) + 'px'; messagesEl.scrollTop = messagesEl.scrollHeight; };
+        ta.addEventListener('input', resize);
+
+        // create initial conversation
+        createConversation('Welcome');
+        addMessage('bot', 'Hi — I am your assistant. Try asking about code, examples, or simple prompts.');
+        renderConvos(); renderActive();
+    </script>
+</body>
+</html>
